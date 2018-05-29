@@ -1,63 +1,79 @@
 package main
 
 import (
-	"testing"
+	"fmt"
+	"io/ioutil"
 	"os"
-	"net/http"
-	"time"
+	"reflect"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
+const testSourceURI = "some-source-uri"
+const testTargetURI = "some-target-uri"
+
 var originals = struct {
-	osArgs []string
+	osArgs             []string
+	verifyRedirectFunc verifyRedirectFuncDef
 }{
-	osArgs: os.Args,
+	osArgs:             os.Args,
+	verifyRedirectFunc: verifyRedirectFunc,
 }
 
 func restoreOriginals() {
 	os.Args = originals.osArgs
+	verifyRedirectFunc = originals.verifyRedirectFunc
 }
 
-// This test does not make assertions, it's just to setup a test scenario
-func TestMainFunc(t *testing.T) {
+func TestMainFunc_ProcessesAllLinesOfFile(t *testing.T) {
 	defer restoreOriginals()
 
-	server := startServer()
+	prepareTestTempFolder(t)
+	writeTestFile(t, 3)
 
-	os.Args = []string{"","-c=4"}
+	numberOfVerifyCalls := 0
+	verifyRedirectFunc = func(redirect Redirect) error {
+		assert.Exactly(t, testSourceURI, redirect.source)
+		assert.Exactly(t, testTargetURI, redirect.target)
+		numberOfVerifyCalls++
+		return nil
+	}
+
+	os.Args = []string{"", "-c=1"}
 	main()
 
-	err := server.Close()
+	assert.Exactly(t, 3, numberOfVerifyCalls)
+}
+
+func prepareTestTempFolder(t *testing.T) {
+	const testTempFolder = "/tmp/checkredirects"
+	err := os.RemoveAll(testTempFolder)
 	if err != nil {
-		t.Fatalf("Did not expect server.Close to return an error, but got: %v ", err)
+		t.Fatalf("Did not expect os.Remove to return an error, but got: %v ", err)
+	}
+	err = os.MkdirAll(testTempFolder, 0777)
+	if err != nil {
+		t.Fatalf("Did not expect os.MkdirAll to return an error, but got: %v ", err)
+	}
+	err = os.Chdir(testTempFolder)
+	if err != nil {
+		t.Fatalf("Did not expect os.Chdir to return an error, but got: %v ", err)
 	}
 }
 
-func startServer() *http.Server {
+func writeTestFile(t *testing.T, linesToCheck int) {
+	var data []byte
 
-	mux := http.NewServeMux()
-	mux.Handle("/test1", http301("redirect1"))
-	mux.Handle("/redirect1", httpOkHandler())
-	mux.Handle("/test2", httpOkHandler())
-
-	srv := &http.Server{Addr: "localhost:10099", Handler: mux}
-
-	go srv.ListenAndServe()
-
-	time.Sleep(100 * time.Millisecond)
-
-	return srv
+	for i := 0; i < linesToCheck; i++ {
+		data = append(data, []byte(fmt.Sprintf("%s\t%s\n", testSourceURI, testTargetURI))...)
+	}
+	err := ioutil.WriteFile(redirectsFileName, data, 0777)
+	if err != nil {
+		t.Fatalf("Did not expect os.Chdir to return an error, but got: %v ", err)
+	}
 }
 
-func http301(redirectTarget string) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(1 * time.Second)
-		http.Redirect(w, r, redirectTarget, http.StatusMovedPermanently)
-	})
-}
-
-func httpOkHandler() http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(200 * time.Millisecond)
-		w.WriteHeader(http.StatusOK)
-	})
+func TestEnsureVerifyRedirectImplementationIsUsed(t *testing.T) {
+	assert.Exactly(t, reflect.ValueOf(verifyRedirectFunc).Pointer(), reflect.ValueOf(VerifyRedirect).Pointer())
 }
