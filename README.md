@@ -1,6 +1,7 @@
-# check redirects
+[![Go Report Card](https://goreportcard.com/badge/github.com/Oppodelldog/checkredirects)](https://goreportcard.com/report/github.com/Oppodelldog/checkredirects) [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/Oppodelldog/checkredirects/master/LICENSE) [![Linux build](http://nulldog.de:12080/api/badges/Oppodelldog/checkredirects/status.svg)](http://nulldog.de:12080/Oppodelldog/checkredirects) [![Coverage Status](https://coveralls.io/repos/github/Oppodelldog/checkredirects/badge.svg?branch=master)](https://coveralls.io/github/Oppodelldog/checkredirects?branch=master)
 
-this tool checks a list of redirects
+# check redirects
+> this tool checks a list of redirects
 
 
 ## redirects file
