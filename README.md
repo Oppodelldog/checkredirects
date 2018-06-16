@@ -1,4 +1,4 @@
-#check redirects
+# check redirects
 
 this tool checks a list of redirects
 
