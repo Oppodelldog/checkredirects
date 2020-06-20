@@ -5,7 +5,7 @@
 
 
 ## redirects file
-Redirects file has to be named **redirects** and must be accissible next to checkredirects command.
+Redirects file has to be named **redirects** and must be accessible next to checkredirects command.
 
 File is csv, must be separated by ```\t```
 

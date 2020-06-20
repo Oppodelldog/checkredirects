@@ -37,10 +37,12 @@ func TestMainFunc_ProcessesAllLinesOfFile(t *testing.T) {
 		assert.Exactly(t, testSourceURI, redirect.source)
 		assert.Exactly(t, testTargetURI, redirect.target)
 		numberOfVerifyCalls++
+
 		return nil
 	}
 
 	os.Args = []string{"", "-c=1"}
+
 	main()
 
 	assert.Exactly(t, 3, numberOfVerifyCalls)
@@ -48,14 +50,17 @@ func TestMainFunc_ProcessesAllLinesOfFile(t *testing.T) {
 
 func prepareTestTempFolder(t *testing.T) {
 	const testTempFolder = "/tmp/checkredirects"
+
 	err := os.RemoveAll(testTempFolder)
 	if err != nil {
 		t.Fatalf("Did not expect os.Remove to return an error, but got: %v ", err)
 	}
+
 	err = os.MkdirAll(testTempFolder, 0777)
 	if err != nil {
 		t.Fatalf("Did not expect os.MkdirAll to return an error, but got: %v ", err)
 	}
+
 	err = os.Chdir(testTempFolder)
 	if err != nil {
 		t.Fatalf("Did not expect os.Chdir to return an error, but got: %v ", err)
@@ -68,7 +73,8 @@ func writeTestFile(t *testing.T, linesToCheck int) {
 	for i := 0; i < linesToCheck; i++ {
 		data = append(data, []byte(fmt.Sprintf("%s\t%s\n", testSourceURI, testTargetURI))...)
 	}
-	err := ioutil.WriteFile(redirectsFileName, data, 0777)
+
+	err := ioutil.WriteFile(redirectsFileName, data, 0600)
 	if err != nil {
 		t.Fatalf("Did not expect os.Chdir to return an error, but got: %v ", err)
 	}

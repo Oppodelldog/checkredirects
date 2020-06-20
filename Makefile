@@ -2,13 +2,12 @@ SOURCE_FILES?=$$(go list ./... | grep -v /vendor/)
 TEST_PATTERN?=.
 TEST_OPTIONS?=-race -covermode=atomic -coverprofile=coverage.txt
 
-setup: ## Install all the build and lint dependencies
-	go get -u gopkg.in/alecthomas/gometalinter.v2
-	go get -u github.com/golang/dep/cmd/dep
-	go get -u golang.org/x/tools/cmd/cover
-	go get -u golang.org/x/tools/cmd/goimports
-	dep ensure
-	gometalinter --install --update
+setup: ## Install tools
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s v1.27.0
+	mkdir .bin || true; mv bin/golangci-lint .bin/golangci-lint && rm -rf bin
+
+lint: ## Run the linters
+	golangci-lint run
 
 test: ## Run all the tests
 	gotestcover $(TEST_OPTIONS)  $(SOURCE_FILES) -run $(TEST_PATTERN) -timeout=1m
@@ -18,28 +17,6 @@ cover: test ## Run all the tests and opens the coverage report
 
 fmt: ## gofmt and goimports all go files
 	find . -name '*.go' -not -wholename './vendor/*' | while read -r file; do gofmt -w -s "$$file"; goimports -w "$$file"; done
-
-lint: ## Run all the linters
-	gometalinter --vendor --disable-all \
-		--enable=deadcode \
-		--enable=gocyclo \
-		--enable=ineffassign \
-		--enable=gosimple \
-		--enable=staticcheck \
-		--enable=gofmt \
-		--enable=golint \
-		--enable=goimports \
-		--enable=dupl \
-		--enable=misspell \
-		--enable=errcheck \
-		--enable=vet \
-		--enable=vetshadow \
-		--enable=varcheck \
-		--enable=structcheck \
-		--enable=interfacer \
-		--enable=goconst \
-		--deadline=10m \
-		./...
 
 ci: lint test ## Run all the tests and code checks
 

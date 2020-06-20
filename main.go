@@ -39,24 +39,24 @@ func main() {
 
 	redirectsChecked := 0
 	isRunning := true
+
 	for isRunning {
-		select {
-		case checkResult, ok := <-checkResultChannel:
-			if !ok {
-				isRunning = false
-			}
+		checkResult, ok := <-checkResultChannel
+		if !ok {
+			isRunning = false
+		}
 
-			fmt.Printf("checking '%s': ", checkResult.redirect.source)
+		fmt.Printf("checking '%s': ", checkResult.redirect.source)
 
-			if checkResult.err != nil {
-				fmt.Printf("%v\n", checkResult.err)
-			} else {
-				fmt.Println("OK")
-			}
-			redirectsChecked++
-			if redirectsChecked == len(redirects) {
-				isRunning = false
-			}
+		if checkResult.err != nil {
+			fmt.Printf("%v\n", checkResult.err)
+		} else {
+			fmt.Println("OK")
+		}
+
+		redirectsChecked++
+		if redirectsChecked == len(redirects) {
+			isRunning = false
 		}
 	}
 	close(checkResultChannel)
@@ -110,7 +110,6 @@ func ReadRedirects() (redirects []Redirect) {
 }
 
 func ReadConcurrentConnections() int {
-
 	concurrent := flag.Int("c", defaultNumberOfConcurrentConnections, "c=2")
 
 	flag.Parse()

@@ -1,19 +1,26 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
 )
 
 func VerifyRedirect(redirect Redirect) error {
-
 	response, err := http.Get(redirect.source)
 	if err != nil {
 		return err
 	}
 
-	redirectResponseURL:= response.Request.URL.String()
+	defer func() {
+		err := response.Body.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	redirectResponseURL := response.Request.URL.String()
 	if redirectResponseURL == redirect.target {
 		return nil
 	}
@@ -22,6 +29,13 @@ func VerifyRedirect(redirect Redirect) error {
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		err := resolveTargetResponse.Body.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 
 	resolvedTargetURL := resolveTargetResponse.Request.URL.String()
 	if resolvedTargetURL == redirectResponseURL {

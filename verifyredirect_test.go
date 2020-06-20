@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -10,10 +11,16 @@ import (
 
 const testServerAddress = "localhost:10099"
 
+//nolint:funlen
 func TestVerifyRedirect(t *testing.T) {
-
 	server := newTestServer()
-	defer server.Close()
+
+	defer func() {
+		err := server.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 
 	testDataTable := map[string]struct {
 		source string
@@ -38,7 +45,7 @@ func TestVerifyRedirect(t *testing.T) {
 		"source does not resolve target": {
 			source: "http://localhost:10099/test1",
 			target: "http://localhost:10099/test4",
-			err:    `source uri http://localhost:10099/test1 does resolve to http://localhost:10099/redirect1,not to targetUri http://localhost:10099/test4 which resolves to http://localhost:10099/deadend`,
+			err:    `source uri http://localhost:10099/test1 does resolve to http://localhost:10099/redirect1,not to targetUri http://localhost:10099/test4 which resolves to http://localhost:10099/deadend`, //nolint:lll
 		},
 		"valid urls, same urls": {
 			source: "http://localhost:10099",
@@ -88,8 +95,12 @@ func newTestServer() *http.Server {
 	mux.Handle("/deadend", httpOkHandler())
 
 	srv := &http.Server{Addr: testServerAddress, Handler: mux}
+
 	go func() {
-		srv.ListenAndServe()
+		err := srv.ListenAndServe()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}()
 
 	time.Sleep(100 * time.Millisecond)
@@ -98,13 +109,13 @@ func newTestServer() *http.Server {
 }
 
 func http301(redirectTarget string) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, redirectTarget, http.StatusMovedPermanently)
-	})
+	}
 }
 
 func httpOkHandler() http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	})
+	}
 }
