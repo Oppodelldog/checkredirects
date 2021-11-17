@@ -15,4 +15,4 @@ env:
 go_import_path: github.com/Oppodelldog/checkredirects
 
 script:
-  - go test -race -covermode=atomic  ./...
+  - make test

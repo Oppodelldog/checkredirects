@@ -1,14 +1,20 @@
-package main
+package internal
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
 )
 
-func VerifyRedirect(redirect Redirect) error {
-	response, err := http.Get(redirect.source)
+func VerifyRedirect(ctx context.Context, redirect Redirect) error {
+	r, err := http.NewRequestWithContext(ctx, http.MethodGet, redirect.Source, nil)
+	if err != nil {
+		return err
+	}
+
+	response, err := http.DefaultClient.Do(r)
 	if err != nil {
 		return err
 	}
@@ -21,11 +27,16 @@ func VerifyRedirect(redirect Redirect) error {
 	}()
 
 	redirectResponseURL := response.Request.URL.String()
-	if redirectResponseURL == redirect.target {
+	if redirectResponseURL == redirect.Target {
 		return nil
 	}
 
-	resolveTargetResponse, err := http.Get(redirect.target)
+	r, err = http.NewRequestWithContext(ctx, http.MethodGet, redirect.Target, nil)
+	if err != nil {
+		return err
+	}
+
+	resolveTargetResponse, err := http.DefaultClient.Do(r)
 	if err != nil {
 		return err
 	}
@@ -43,10 +54,10 @@ func VerifyRedirect(redirect Redirect) error {
 	}
 
 	return errors.Errorf(
-		"source uri %s does resolve to %s,"+
+		"Source uri %s does resolve to %s,"+
 			"not to targetUri %s which resolves to %s",
-		redirect.source,
+		redirect.Source,
 		redirectResponseURL,
-		redirect.target,
+		redirect.Target,
 		resolvedTargetURL)
 }

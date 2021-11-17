@@ -1,34 +1,33 @@
-SOURCE_FILES?=$$(go list ./... | grep -v /vendor/)
-TEST_PATTERN?=.
-TEST_OPTIONS?=-race -covermode=atomic -coverprofile=coverage.txt
 
+.PHONY: setup
 setup: ## Install tools
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s v1.27.0
-	mkdir .bin || true; mv bin/golangci-lint .bin/golangci-lint && rm -rf bin
+	go install golang.org/x/tools/cmd/goimports
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0
 
+.PHONY: lint
 lint: ## Run the linters
 	golangci-lint run
 
+.PHONY: test
 test: ## Run all the tests
-	gotestcover $(TEST_OPTIONS)  $(SOURCE_FILES) -run $(TEST_PATTERN) -timeout=1m
+	go version
+	go env
+	go list ./... | xargs -n1 -I{} sh -c 'go test -race {}'
 
-cover: test ## Run all the tests and opens the coverage report
-	go tool cover -html=coverage.txt
-
+.PHONY: fmt
 fmt: ## gofmt and goimports all go files
 	find . -name '*.go' -not -wholename './vendor/*' | while read -r file; do gofmt -w -s "$$file"; goimports -w "$$file"; done
 
+.PHONY: ci
 ci: lint test ## Run all the tests and code checks
 
+.PHONY: build
 build: ## build binary to .build folder
-	go build -o ".build/checkredirects" main.go
+	go build -o ".build/checkredirects" cmd/main.go
 
+.PHONY: install
 install: ## Install to <gopath>/src
 	go install ./...
-
-build-release: ## builds the checked out version into the .release/${tag} folder
-	.release/build.sh
-
 
 # Self-Documented Makefile see https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 help:

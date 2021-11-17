@@ -1,38 +1,35 @@
-package main
+package internal
 
 import (
 	"bufio"
 	"bytes"
-	"flag"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"strings"
 )
 
-const (
-	defaultNumberOfConcurrentConnections = 1
-	redirectsFileName                    = "redirects"
-)
+const RedirectsFileName = "redirects"
 
 type (
 	Redirect struct {
-		source string
-		target string
+		Source string
+		Target string
 	}
 
 	CheckResult struct {
-		redirect Redirect
-		err      error
+		Redirect Redirect
+		Err      error
 	}
 
-	verifyRedirectFuncDef func(redirect Redirect) error
+	VerifyRedirectFuncDef func(ctx context.Context, redirect Redirect) error
 )
 
-var verifyRedirectFunc = verifyRedirectFuncDef(VerifyRedirect)
+var VerifyRedirectFunc = VerifyRedirectFuncDef(VerifyRedirect)
 
-func main() {
-	concurrentConnections := ReadConcurrentConnections()
-	workerQueue, checkResultChannel := CreateRedirectWorkers(concurrentConnections)
+func Check(concurrentConnections int) {
+	ctx := context.Background()
+	workerQueue, checkResultChannel := CreateRedirectWorkers(ctx, concurrentConnections)
 
 	redirects := ReadRedirects()
 	go CheckRedirects(redirects, workerQueue)
@@ -46,10 +43,10 @@ func main() {
 			isRunning = false
 		}
 
-		fmt.Printf("checking '%s': ", checkResult.redirect.source)
+		fmt.Printf("checking '%s': ", checkResult.Redirect.Source)
 
-		if checkResult.err != nil {
-			fmt.Printf("%v\n", checkResult.err)
+		if checkResult.Err != nil {
+			fmt.Printf("%v\n", checkResult.Err)
 		} else {
 			fmt.Println("OK")
 		}
@@ -63,17 +60,17 @@ func main() {
 	close(workerQueue)
 }
 
-func CreateRedirectWorkers(numberOfConcurrentChecks int) (chan Redirect, chan CheckResult) {
+func CreateRedirectWorkers(ctx context.Context, numberOfConcurrentChecks int) (chan Redirect, chan CheckResult) {
 	workerQueue := make(chan Redirect, numberOfConcurrentChecks)
 	checkResultChannel := make(chan CheckResult, numberOfConcurrentChecks)
 
 	for i := 0; i < numberOfConcurrentChecks; i++ {
 		go func() {
 			for redirect := range workerQueue {
-				err := verifyRedirectFunc(redirect)
+				err := VerifyRedirectFunc(ctx, redirect)
 				result := CheckResult{
-					redirect: redirect,
-					err:      err,
+					Redirect: redirect,
+					Err:      err,
 				}
 
 				checkResultChannel <- result
@@ -91,7 +88,7 @@ func CheckRedirects(redirects []Redirect, redirectQueue chan Redirect) {
 }
 
 func ReadRedirects() (redirects []Redirect) {
-	fileContent, err := ioutil.ReadFile(redirectsFileName)
+	fileContent, err := ioutil.ReadFile(RedirectsFileName)
 	if err != nil {
 		panic(err)
 	}
@@ -107,12 +104,4 @@ func ReadRedirects() (redirects []Redirect) {
 	}
 
 	return
-}
-
-func ReadConcurrentConnections() int {
-	concurrent := flag.Int("c", defaultNumberOfConcurrentConnections, "c=2")
-
-	flag.Parse()
-
-	return *concurrent
 }

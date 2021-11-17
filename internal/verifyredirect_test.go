@@ -1,6 +1,7 @@
-package main
+package internal
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -27,12 +28,12 @@ func TestVerifyRedirect(t *testing.T) {
 		target string
 		err    string
 	}{
-		"source invalid, expect error": {
+		"Source invalid, expect error": {
 			source: "",
 			target: "http://localhost:10099",
 			err:    "unsupported protocol scheme",
 		},
-		"target invalid, expect error": {
+		"Target invalid, expect error": {
 			source: "http://localhost:10099",
 			target: "",
 			err:    "unsupported protocol scheme",
@@ -42,22 +43,22 @@ func TestVerifyRedirect(t *testing.T) {
 			target: "",
 			err:    "unsupported protocol scheme",
 		},
-		"source does not resolve target": {
+		"Source does not resolve Target": {
 			source: "http://localhost:10099/test1",
 			target: "http://localhost:10099/test4",
-			err:    `source uri http://localhost:10099/test1 does resolve to http://localhost:10099/redirect1,not to targetUri http://localhost:10099/test4 which resolves to http://localhost:10099/deadend`, //nolint:lll
+			err:    `Source uri http://localhost:10099/test1 does resolve to http://localhost:10099/redirect1,not to targetUri http://localhost:10099/test4 which resolves to http://localhost:10099/deadend`, //nolint:lll
 		},
 		"valid urls, same urls": {
 			source: "http://localhost:10099",
 			target: "http://localhost:10099",
 			err:    "",
 		},
-		"valid urls, source is resolved in target": {
+		"valid urls, Source is resolved in Target": {
 			source: "http://localhost:10099/test1",
 			target: "http://localhost:10099/redirect1",
 			err:    "",
 		},
-		"valid urls, source and target resolve in the same url": {
+		"valid urls, Source and Target resolve in the same url": {
 			source: "http://localhost:10099/test2",
 			target: "http://localhost:10099/test3",
 			err:    "",
@@ -67,10 +68,10 @@ func TestVerifyRedirect(t *testing.T) {
 	for testName, testData := range testDataTable {
 		t.Run(testName, func(t *testing.T) {
 			redirect := Redirect{
-				source: testData.source,
-				target: testData.target,
+				Source: testData.source,
+				Target: testData.target,
 			}
-			err := VerifyRedirect(redirect)
+			err := VerifyRedirect(context.Background(), redirect)
 
 			if testData.err != "" {
 				if err == nil {

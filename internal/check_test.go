@@ -1,29 +1,32 @@
-package main
+package internal_test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 
+	"gitlab.com/Oppodelldog/checkredirects/internal"
+
 	"github.com/stretchr/testify/assert"
 )
 
-const testSourceURI = "some-source-uri"
-const testTargetURI = "some-target-uri"
+const testSourceURI = "some-Source-uri"
+const testTargetURI = "some-Target-uri"
 
 var originals = struct {
 	osArgs             []string
-	verifyRedirectFunc verifyRedirectFuncDef
+	verifyRedirectFunc internal.VerifyRedirectFuncDef
 }{
 	osArgs:             os.Args,
-	verifyRedirectFunc: verifyRedirectFunc,
+	verifyRedirectFunc: internal.VerifyRedirectFunc,
 }
 
 func restoreOriginals() {
 	os.Args = originals.osArgs
-	verifyRedirectFunc = originals.verifyRedirectFunc
+	internal.VerifyRedirectFunc = originals.verifyRedirectFunc
 }
 
 func TestMainFunc_ProcessesAllLinesOfFile(t *testing.T) {
@@ -33,17 +36,15 @@ func TestMainFunc_ProcessesAllLinesOfFile(t *testing.T) {
 	writeTestFile(t, 3)
 
 	numberOfVerifyCalls := 0
-	verifyRedirectFunc = func(redirect Redirect) error {
-		assert.Exactly(t, testSourceURI, redirect.source)
-		assert.Exactly(t, testTargetURI, redirect.target)
+	internal.VerifyRedirectFunc = func(ctx context.Context, redirect internal.Redirect) error {
+		assert.Exactly(t, testSourceURI, redirect.Source)
+		assert.Exactly(t, testTargetURI, redirect.Target)
 		numberOfVerifyCalls++
 
 		return nil
 	}
 
-	os.Args = []string{"", "-c=1"}
-
-	main()
+	internal.Check(1)
 
 	assert.Exactly(t, 3, numberOfVerifyCalls)
 }
@@ -74,12 +75,12 @@ func writeTestFile(t *testing.T, linesToCheck int) {
 		data = append(data, []byte(fmt.Sprintf("%s\t%s\n", testSourceURI, testTargetURI))...)
 	}
 
-	err := ioutil.WriteFile(redirectsFileName, data, 0600)
+	err := ioutil.WriteFile(internal.RedirectsFileName, data, 0600)
 	if err != nil {
 		t.Fatalf("Did not expect os.Chdir to return an error, but got: %v ", err)
 	}
 }
 
 func TestEnsureVerifyRedirectImplementationIsUsed(t *testing.T) {
-	assert.Exactly(t, reflect.ValueOf(verifyRedirectFunc).Pointer(), reflect.ValueOf(VerifyRedirect).Pointer())
+	assert.Exactly(t, reflect.ValueOf(internal.VerifyRedirectFunc).Pointer(), reflect.ValueOf(internal.VerifyRedirectFunc).Pointer())
 }
