@@ -15,4 +15,4 @@ env:
 go_import_path: github.com/Oppodelldog/checkredirects
 
 script:
-  - make test
+  - go list ./... | xargs -n1 -I{} sh -c 'go test -race {}'
