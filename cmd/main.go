@@ -10,9 +10,15 @@ import (
 
 const defaultNumberOfConcurrentConnections = 1
 const defaultDelimiter = "\t"
+const defaultFilename = "redirects"
 
 func main() {
 	flagSet := flag.NewFlagSet("", flag.ContinueOnError)
+
+	var filename = flagSet.String("f", defaultFilename, "-f=redirects.txt")
+	if len(*filename) == 0 {
+		*filename = defaultFilename
+	}
 
 	var concurrent = flagSet.Int("c", defaultNumberOfConcurrentConnections, "-c=2")
 	if *concurrent == 0 {
@@ -29,5 +35,5 @@ func main() {
 		return
 	}
 
-	internal.Check(*concurrent, *delimiter)
+	internal.Check(*filename, *concurrent, *delimiter)
 }

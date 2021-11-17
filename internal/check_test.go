@@ -15,6 +15,7 @@ import (
 
 const testSourceURI = "some-Source-uri"
 const testTargetURI = "some-Target-uri"
+const redirectsFilename = "redirects"
 
 var originals = struct {
 	osArgs             []string
@@ -44,7 +45,7 @@ func TestMainFunc_ProcessesAllLinesOfFile(t *testing.T) {
 		return nil
 	}
 
-	internal.Check(1, "\t")
+	internal.Check(redirectsFilename, 1, "\t")
 
 	assert.Exactly(t, 3, numberOfVerifyCalls)
 }
@@ -75,7 +76,7 @@ func writeTestFile(t *testing.T, linesToCheck int) {
 		data = append(data, []byte(fmt.Sprintf("%s\t%s\n", testSourceURI, testTargetURI))...)
 	}
 
-	err := ioutil.WriteFile(internal.RedirectsFileName, data, 0600)
+	err := ioutil.WriteFile(redirectsFilename, data, 0600)
 	if err != nil {
 		t.Fatalf("Did not expect os.Chdir to return an error, but got: %v ", err)
 	}

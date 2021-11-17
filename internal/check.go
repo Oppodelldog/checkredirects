@@ -9,8 +9,6 @@ import (
 	"strings"
 )
 
-const RedirectsFileName = "redirects"
-
 type (
 	Redirect struct {
 		Source string
@@ -27,11 +25,11 @@ type (
 
 var VerifyRedirectFunc = VerifyRedirectFuncDef(VerifyRedirect)
 
-func Check(concurrentConnections int, delimiter string) {
+func Check(filename string, concurrentConnections int, delimiter string) {
 	ctx := context.Background()
 	workerQueue, checkResultChannel := CreateRedirectWorkers(ctx, concurrentConnections)
 
-	redirects := ReadRedirects(delimiter)
+	redirects := ReadRedirects(filename, delimiter)
 	go CheckRedirects(redirects, workerQueue)
 
 	redirectsChecked := 0
@@ -87,8 +85,8 @@ func CheckRedirects(redirects []Redirect, redirectQueue chan Redirect) {
 	}
 }
 
-func ReadRedirects(delimiter string) (redirects []Redirect) {
-	fileContent, err := ioutil.ReadFile(RedirectsFileName)
+func ReadRedirects(filename, delimiter string) (redirects []Redirect) {
+	fileContent, err := ioutil.ReadFile(filename)
 	if err != nil {
 		panic(err)
 	}
