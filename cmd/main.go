@@ -13,6 +13,7 @@ const defaultDelimiter = "\t"
 
 func main() {
 	flagSet := flag.NewFlagSet("", flag.ContinueOnError)
+
 	var concurrent = flagSet.Int("c", defaultNumberOfConcurrentConnections, "-c=2")
 	if *concurrent == 0 {
 		*concurrent = defaultNumberOfConcurrentConnections
