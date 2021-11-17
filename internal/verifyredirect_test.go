@@ -28,20 +28,30 @@ func TestVerifyRedirect(t *testing.T) {
 		target string
 		err    string
 	}{
-		"Source invalid, expect error": {
+		"Source invalid, expect http get error": {
 			source: "",
 			target: "http://localhost:10099",
-			err:    "unsupported protocol scheme",
+			err:    ErrSourceRequest.Error(),
 		},
-		"Target invalid, expect error": {
+		"Target invalid, expect http get error": {
 			source: "http://localhost:10099",
 			target: "",
-			err:    "unsupported protocol scheme",
+			err:    ErrTargetRequest.Error(),
+		},
+		"Source invalid, expect request error": {
+			source: "http://localhost:10099/invalid%request",
+			target: "http://localhost:10099",
+			err:    ErrInvalidSourceRequest.Error(),
+		},
+		"Target invalid, expect request error": {
+			source: "http://localhost:10099",
+			target: "http://localhost:10099/invalid%request",
+			err:    ErrInvalidTargetRequest.Error(),
 		},
 		"both invalid, expect error": {
 			source: "",
 			target: "",
-			err:    "unsupported protocol scheme",
+			err:    ErrSourceRequest.Error(),
 		},
 		"Source does not resolve Target": {
 			source: "http://localhost:10099/test1",
