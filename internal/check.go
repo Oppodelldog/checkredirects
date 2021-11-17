@@ -27,11 +27,11 @@ type (
 
 var VerifyRedirectFunc = VerifyRedirectFuncDef(VerifyRedirect)
 
-func Check(concurrentConnections int) {
+func Check(concurrentConnections int, delimiter string) {
 	ctx := context.Background()
 	workerQueue, checkResultChannel := CreateRedirectWorkers(ctx, concurrentConnections)
 
-	redirects := ReadRedirects()
+	redirects := ReadRedirects(delimiter)
 	go CheckRedirects(redirects, workerQueue)
 
 	redirectsChecked := 0
@@ -87,7 +87,7 @@ func CheckRedirects(redirects []Redirect, redirectQueue chan Redirect) {
 	}
 }
 
-func ReadRedirects() (redirects []Redirect) {
+func ReadRedirects(delimiter string) (redirects []Redirect) {
 	fileContent, err := ioutil.ReadFile(RedirectsFileName)
 	if err != nil {
 		panic(err)
@@ -96,7 +96,7 @@ func ReadRedirects() (redirects []Redirect) {
 	scanner := bufio.NewScanner(bytes.NewBuffer(fileContent))
 	for scanner.Scan() {
 		line := scanner.Text()
-		cols := strings.Split(line, "\t")
+		cols := strings.Split(line, delimiter)
 		redirects = append(redirects, Redirect{
 			cols[0],
 			cols[1],

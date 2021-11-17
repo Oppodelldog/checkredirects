@@ -2,20 +2,31 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 
 	"gitlab.com/Oppodelldog/checkredirects/internal"
 )
 
 const defaultNumberOfConcurrentConnections = 1
+const defaultDelimiter = "\t"
 
 func main() {
-	internal.Check(ReadConcurrentConnections())
-}
+	flagSet := flag.NewFlagSet("", flag.ContinueOnError)
+	var concurrent = flagSet.Int("c", defaultNumberOfConcurrentConnections, "-c=2")
+	if *concurrent == 0 {
+		*concurrent = defaultNumberOfConcurrentConnections
+	}
 
-func ReadConcurrentConnections() int {
-	concurrent := flag.Int("c", defaultNumberOfConcurrentConnections, "-c=2")
+	var delimiter = flagSet.String("d", defaultDelimiter, "-d=;")
+	if len(*delimiter) == 0 {
+		*delimiter = defaultDelimiter
+	}
 
-	flag.Parse()
+	if err := flagSet.Parse(os.Args[1:]); err != nil {
+		fmt.Println(err)
+		return
+	}
 
-	return *concurrent
+	internal.Check(*concurrent, *delimiter)
 }

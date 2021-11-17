@@ -44,7 +44,7 @@ func TestMainFunc_ProcessesAllLinesOfFile(t *testing.T) {
 		return nil
 	}
 
-	internal.Check(1)
+	internal.Check(1, "\t")
 
 	assert.Exactly(t, 3, numberOfVerifyCalls)
 }
